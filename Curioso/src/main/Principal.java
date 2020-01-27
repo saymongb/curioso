@@ -21,9 +21,7 @@ import javax.swing.ListSelectionModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Collections;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -37,8 +35,16 @@ public class Principal {
 	// Variáveis de controle
 	private BancoIF bancoIF;
 	private Thread bancoIFThread,preencheThread;
-	private SortedSet<String> consultas;
 	private AreaSQLThread preenchedor;
+	
+	
+	/* A variável sqlFilaText centraliza toda a lógica da aplicação
+	 * servindo como um buffer comum as classes BancoIF e AreaSQLThread.
+	 * Trata-se de um típico problema produtor-consumdidor onde BancoIF
+	 * alimenta o buffer com o resultado das consultas no banco e AreaSQLThread
+	 * consome desse buffer para preencher a tela.
+	 * */
+	private LinkedBlockingQueue<String> sqlFilaText;
 	//private String modulo;
 
 	// Componentes da tela
@@ -92,10 +98,7 @@ public class Principal {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		
-		consultas = Collections.synchronizedSortedSet(
-				new TreeSet<String>());
-		
+
 		Principal = new JFrame();
 		Principal.setResizable(false);
 		Principal.setTitle("Curioso");
@@ -209,12 +212,6 @@ public class Principal {
 		btnAtualizarLista.setEnabled(false);
 		Principal.getContentPane().add(btnAtualizarLista);
 
-		//Variáveis de controle
-		bancoIF = new BancoIF();
-		preenchedor = new AreaSQLThread(bancoIF.getConsultas(),areaSelect);
-		bancoIF.setAreaSelect(areaSelect);
-		
-
 		JLabel lblSql = new JLabel("SQL");
 		lblSql.setLabelFor(areaSelect);
 		lblSql.setBounds(465, 32, 46, 14);
@@ -260,14 +257,14 @@ public class Principal {
 					if(listaModulos.getSelectedValue() != null){
 
 						if(bancoIF.isConnected()){
-							
-													
+
+
 							bancoIFThread = new Thread(bancoIF);
 							preencheThread = new Thread(preenchedor);
-							
+
 							bancoIFThread.setPriority(Thread.MAX_PRIORITY);
 							preencheThread.setPriority(Thread.MAX_PRIORITY);
-							
+
 							bancoIFThread.start();
 							preencheThread.start();
 
@@ -316,22 +313,29 @@ public class Principal {
 				}
 			}
 		});
+
+		//Variáveis de controle
+		sqlFilaText = new LinkedBlockingQueue<String>();
+		bancoIF = new BancoIF(sqlFilaText);
+		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
+		bancoIF.setAreaSelect(areaSelect);
+
 	}
 
 	public void reiniciar (){
-			resetarCampos(false);
-			bancoIF.setGravar(false);
-			bancoIF = new BancoIF();
-			bancoIF.setAreaSelect(areaSelect);
-			textSenha.setText(null);
-			textServidor.setText(null);
-			textUsuario.setText(null);
-			areaSelect.setText(null);
-			bancoIF.getModulos().clear();
-			buttonConnectar.setEnabled(true);
-			buttonConnectar.enableInputMethods(true);
-			buttonConnectar.setText("Conectar!");
-			listaModulos.setListData(bancoIF.getModulos());
+		resetarCampos(false);
+		bancoIF.setGravar(false);
+		bancoIF = new BancoIF();
+		bancoIF.setAreaSelect(areaSelect);
+		textSenha.setText(null);
+		textServidor.setText(null);
+		textUsuario.setText(null);
+		areaSelect.setText(null);
+		bancoIF.getModulos().clear();
+		buttonConnectar.setEnabled(true);
+		buttonConnectar.enableInputMethods(true);
+		buttonConnectar.setText("Conectar!");
+		listaModulos.setListData(bancoIF.getModulos());
 	}
 
 	public void resetarCampos(boolean gravar){

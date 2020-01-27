@@ -17,6 +17,7 @@ import java.sql.Statement;
 //import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.lang.System;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,6 +32,7 @@ public class BancoIF implements Runnable {
 	private Statement consulta,consultaModulos;
 	private ResultSet resultado,resultadoModulos;
 	private TreeSet<String> consultas;
+	private LinkedBlockingQueue<String> sqlFilaText;
 	private Vector<String> modulos;
 	private String sqlConsulta,sqlresultado,sqlModulos,usuario,servidor,senha;
 	private Connection conexao;
@@ -41,6 +43,11 @@ public class BancoIF implements Runnable {
 	// Construtor
 	public BancoIF(){
 		this.comum = comum;
+		inicializar();
+	}
+	
+	public BancoIF(LinkedBlockingQueue<String> filaPrincipal){
+		this.sqlFilaText = filaPrincipal;
 		inicializar();
 	}
 
@@ -115,6 +122,7 @@ public class BancoIF implements Runnable {
 			resultadoModulos = consultaModulos.executeQuery(sqlModulos);
 
 			while(resultadoModulos.next()){
+				
 				modulos.add(resultadoModulos.getString(1));
 			}
 			resultadoModulos.close();
@@ -184,8 +192,6 @@ public class BancoIF implements Runnable {
 
 	public void monitorarSQL (){
 
-		String sql_id = null;
-
 		try{
 
 			consulta = getConexao().createStatement();
@@ -196,7 +202,8 @@ public class BancoIF implements Runnable {
 
 				while(resultado.next()){
 					
-					comum = resultado.getString(1);
+					sqlFilaText.put(resultado.getString(1));
+					//comum = resultado.getString(1);
 					
 				}
 				resultado.close();	

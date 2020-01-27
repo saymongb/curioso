@@ -9,18 +9,23 @@ package main;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 
 public class AreaSQLThread implements Runnable{
 
 	private TreeSet<String> consultasControle;
 	private SortedSet<String> consultasBanco;
+	private LinkedBlockingQueue<String> sqlFilaText;
 	private JTextArea areaConsultas;
 	private String consultaAtual,temp;
 
-	public AreaSQLThread(SortedSet<String> consultasBanco,
+	public AreaSQLThread(LinkedBlockingQueue<String> consultasBanco,
 			JTextArea areaConsultas){
-		this.consultasBanco = consultasBanco;
+		this.sqlFilaText = consultasBanco;
 		this.areaConsultas = areaConsultas;
 		consultasControle = new TreeSet<String>();
 	}
@@ -30,11 +35,16 @@ public class AreaSQLThread implements Runnable{
 		// TODO Auto-generated method stub
 		while(true){
 
-			consultaAtual = consultasBanco.first();
-			
-			System.out.println(consultaAtual);
+			try {
+				// Este método bloqueia até que a fila tenha novos elementos.
+				consultaAtual = sqlFilaText.take();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				JOptionPane.showMessageDialog(null, e.getMessage());
+			}
 
-			if(!consultasControle.contains(consultaAtual)){
+			if(consultaAtual != null &&
+					!consultasControle.contains(consultaAtual)){
 				consultasControle.add(consultaAtual);
 				temp = "\n<--Inicio de SQL-->\n"+
 						consultaAtual+
