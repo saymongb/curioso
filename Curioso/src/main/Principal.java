@@ -323,10 +323,14 @@ public class Principal {
 	}
 
 	public void reiniciar (){
+		
 		resetarCampos(false);
-		bancoIF.setGravar(false);
-		bancoIF = new BancoIF();
+		
+		sqlFilaText = new LinkedBlockingQueue<String>();
+		bancoIF = new BancoIF(sqlFilaText);
+		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
 		bancoIF.setAreaSelect(areaSelect);
+		bancoIF.setGravar(false);
 		textSenha.setText(null);
 		textServidor.setText(null);
 		textUsuario.setText(null);

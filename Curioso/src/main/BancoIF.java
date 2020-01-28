@@ -2,8 +2,7 @@
  * Classe responsável por executar as ações
  * de monitoramento do BD.
  * 
- * Implementar: preenchimento do objeto consultasBanco(SortedSet<String>)
- * comum a classe AreaSQLThread.
+ * Implementar: .
  * 
  * */
 package main;
@@ -82,8 +81,7 @@ public class BancoIF implements Runnable {
 				"AND (UPPER(V.OSUSER) LIKE '%"+System.getProperty("user.name").toUpperCase()+"' "+
 				" OR UPPER(V.MACHINE) LIKE'%"+terminal+"')"+
 				" AND USERNAME NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK') "+
-				" ORDER BY U.LAST_ACTIVE_TIME";
-		
+				" ORDER BY U.LAST_ACTIVE_TIME";	
 	}
 
 	public void setSqlModulos(){
@@ -103,9 +101,7 @@ public class BancoIF implements Runnable {
 					" OR UPPER(V.MACHINE) LIKE'%"+terminal+"')"+
 					" AND USERNAME NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK')";
 
-			System.out.println(sqlModulos);
-			
-		} catch (UnknownHostException e) {
+		}catch (UnknownHostException e) {
 			JOptionPane.showMessageDialog(null, "Não foi possível obter o nome da estação local.");
 		}	
 	}
@@ -203,7 +199,6 @@ public class BancoIF implements Runnable {
 				while(resultado.next()){
 					
 					sqlFilaText.put(resultado.getString(1));
-					//comum = resultado.getString(1);
 					
 				}
 				resultado.close();	
@@ -214,7 +209,8 @@ public class BancoIF implements Runnable {
 			gravar = false;
 			JOptionPane.showMessageDialog(null, e.getMessage());
 		}catch(Exception e){
-			JOptionPane.showMessageDialog(null, "Erro ao preparar o SQL.");
+			JOptionPane.showMessageDialog(null, "Erro ao preparar o SQL."+e.getMessage());
+			System.out.println(e.getMessage());
 			gravar = false;
 		}
 	}
