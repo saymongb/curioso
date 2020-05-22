@@ -1,6 +1,8 @@
 /*
- * 
- *  */
+ * Continuar tutorial em:
+ * https://docs.oracle.com/javase/tutorial/displayCode.html?code=https://docs.oracle.com/javase/tutorial/uiswing/examples/components/ProgressBarDemo2Project/src/components/ProgressBarDemo2.java
+ * */
+
 package database;
 
 import java.sql.Connection;
@@ -10,10 +12,10 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
 
-public class BuscaCNPJ implements Runnable{
+public class BuscaCNPJWorker extends SwingWorker<Void, Void> {
 
-	// Variáveis de controle
 	private Connection conexao;
 	private ArrayList<ArrayList<String>> lista,usuarios;
 	private Statement consulta;
@@ -21,18 +23,19 @@ public class BuscaCNPJ implements Runnable{
 	private String sqlConsulta,username,CNPJ;
 
 	// Construtor
-	public BuscaCNPJ(Connection conn){
+	public BuscaCNPJWorker(Connection conn){
 
 		conexao = conn;
 		lista = new ArrayList<ArrayList<String>>();
 		usuarios = new ArrayList<ArrayList<String>>();
 		setSqlConsulta();
 	}
-
-	// Lógica da classe
+	
 	@Override
-	public void run() {
-
+	protected Void doInBackground() throws Exception {
+		// TODO Auto-generated method stub
+		// Lógica da classe
+		
 		ArrayList<String> elemento;
 
 		try{
@@ -57,6 +60,8 @@ public class BuscaCNPJ implements Runnable{
 		}catch (SQLException e){
 			JOptionPane.showMessageDialog(null,"Não foi possível realizar o SQL!");
 		}
+		
+		return null;
 	}
 
 	public void pesquisar(){
@@ -133,4 +138,5 @@ public class BuscaCNPJ implements Runnable{
 	public void setUsername(String username) {
 		this.username = username;
 	}
+
 }

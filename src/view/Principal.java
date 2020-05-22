@@ -12,6 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
@@ -74,7 +75,7 @@ public class Principal {
 	private JMenuItem menuItemSobre;
 	private JMenuItem menuItemNovaCon;
 	private JMenuItem mntmBuscarBase;
-
+	private JProgressBar progressoBarra;
 	/**
 	 * Launch the application.
 	 */
@@ -189,9 +190,11 @@ public class Principal {
 							JOptionPane.ERROR_MESSAGE);
 				}else{
 					
-					/// Apenas para teste
-					
+					/// Apenas para teste, implementar validação do formulário.
+					progressoBarra = new JProgressBar();
 					BuscaCNPJ aux = new BuscaCNPJ(bancoIF.getConexao());
+					aux.setUsername(bancoIF.getUsuario());
+					aux.setCNPJ(CNPJ);
 					Thread t1 = new Thread(aux);
 					t1.start();
 

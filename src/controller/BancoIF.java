@@ -34,6 +34,7 @@ public class BancoIF implements Runnable {
 	private LinkedBlockingQueue<String> sqlFilaText;
 	private Vector<String> modulos;
 	private String sqlConsulta,sqlresultado,sqlModulos,usuario,servidor,senha;
+	
 	private Connection conexao;
 	private boolean gravar;
 	private JTextArea areaSelect;
@@ -224,5 +225,14 @@ public class BancoIF implements Runnable {
 
 			return m.matches();
 		}
+		
+		public String getUsuario() {
+			return usuario;
+		}
+
+		public void setUsuario(String usuario) {
+			this.usuario = usuario;
+		}
+
 
 	}
