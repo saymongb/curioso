@@ -1,10 +1,21 @@
 /* 
  * Interface de comunicação com o usuário.
+ * 
+ * Corrigir:
+ * 	1. Problema em determinadas consultas em que a aplicação
+ * 		não localiza os módulos executando na máquina.
+ * 
+ * A fazer:
+ * 	1. Implementar barra de progresso durante a busca de CNPJ.
+ * 	2. Implementar gravação de preferências de conexão via arquivo. 
+ * 
  * */
 package view;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GridLayout;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -22,6 +33,7 @@ import javax.swing.ListSelectionModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.swing.JMenuBar;
@@ -34,6 +46,9 @@ import javax.swing.ScrollPaneConstants;
 import controller.AreaSQLThread;
 import controller.BancoIF;
 import database.BuscaCNPJ;
+import javax.swing.JToolBar;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 
 public class Principal {
@@ -182,23 +197,8 @@ public class Principal {
 						null,
 						null,
 						"XX.XXX.XXX/XXXX-XX");
-
-				if(!BancoIF.validaCNPJ(CNPJ)){
-					JOptionPane.showMessageDialog(null,
-							"CNPJ inválido!",
-							"Atenção!",
-							JOptionPane.ERROR_MESSAGE);
-				}else{
-					
-					/// Apenas para teste, implementar validação do formulário.
-					progressoBarra = new JProgressBar();
-					BuscaCNPJ aux = new BuscaCNPJ(bancoIF.getConexao());
-					aux.setUsername(bancoIF.getUsuario());
-					aux.setCNPJ(CNPJ);
-					Thread t1 = new Thread(aux);
-					t1.start();
-
-				}
+				
+				exibirBuscaCNPJ(CNPJ);
 			}
 		});
 
@@ -398,10 +398,85 @@ public class Principal {
 			btnAtualizarLista.enableInputMethods(false);
 		}
 	}
-	
+
 	public boolean validarCampos(){
 		// implementar tipo de validação via Enum
 		return true;
+
+	}
+
+	public void exibirBuscaCNPJ(String CNPJ){
 		
+		GridLayout meuGrid = new GridLayout();
+		JFrame frameResultados = new JFrame();
+		int qtdUsuarios;
+		JTextField textGridAux;
+		
+		if(!BancoIF.validaCNPJ(CNPJ)){
+			JOptionPane.showMessageDialog(null,
+					"CNPJ inválido!",
+					"Atenção!",
+					JOptionPane.ERROR_MESSAGE);
+		}else{
+
+			if(bancoIF.getConexao() == null){
+
+				JOptionPane.showMessageDialog(null, "Atenção! Necessário conectar ao banco de dados primeiro.");
+
+			}else{
+				/// Apenas para teste, implementar validação do formulário.
+				progressoBarra = new JProgressBar();
+				BuscaCNPJ aux = new BuscaCNPJ(bancoIF.getConexao());
+				aux.setUsername(bancoIF.getUsuario());
+				aux.setCNPJ(CNPJ);
+				Thread t1 = new Thread(aux);
+				t1.start();
+				
+				try {
+					
+					t1.join();
+					qtdUsuarios = aux.getUsuarios().size(); 
+					
+					if (qtdUsuarios == 0){
+						JOptionPane.showMessageDialog(null, "Não existem usuários no banco com o CNPJ:"+CNPJ);
+					}else{
+						
+						// Definir leiaute do frame e quantidade de linhas.
+						meuGrid.setColumns(2);
+						meuGrid.setRows(qtdUsuarios+2);
+						frameResultados.setLayout(meuGrid);
+						frameResultados.setMinimumSize(new Dimension(300,200));
+						
+						// Cabeçalho
+						frameResultados.add(new JLabel("Username"));
+						frameResultados.add(new JLabel("Data de criação"));
+						
+						for (ArrayList<String> dadosUsuario : aux.getUsuarios()){
+							
+							// Nome do usuário no banco
+							textGridAux = new JTextField(dadosUsuario.get(0));
+							textGridAux.setEditable(false);
+							frameResultados.add(textGridAux);
+							
+							// Data de criação
+							textGridAux = new JTextField(dadosUsuario.get(1));
+							textGridAux.setEditable(false);
+							frameResultados.add(textGridAux);
+							
+						}
+						
+						frameResultados.setTitle("Resultados:");
+						frameResultados.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+						//frameResultados.pack();
+						frameResultados.setVisible(true);
+						
+					}
+					
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 }

@@ -53,7 +53,7 @@ public class BuscaCNPJ implements Runnable{
 			resultado.close();
 
 			pesquisar();
-			
+
 		}catch (SQLException e){
 			JOptionPane.showMessageDialog(null,"Não foi possível realizar o SQL!");
 		}
@@ -78,9 +78,9 @@ public class BuscaCNPJ implements Runnable{
 				resultado = consulta.executeQuery(sql);
 
 				// Não mudar a ordem, getInt deve ser chamado após next.
-				if (resultado.next() && resultado.getInt(1) > 0)
+				if (resultado.next() && resultado.getInt(1) > 0){
 					usuarios.add(usr);
-
+				}
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				JOptionPane.showMessageDialog(null, "Erro ao executar a consulta no usuário "+username+"e CNPJ:"+CNPJ);
