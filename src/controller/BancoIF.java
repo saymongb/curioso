@@ -13,6 +13,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,6 +24,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
+
+import oracle.jdbc.pool.OracleDataSource;
 
 public class BancoIF implements Runnable {
 
@@ -78,11 +81,11 @@ public class BancoIF implements Runnable {
 				"AND V.SQL_ID = U.sql_id "+
 				"AND UPPER(V.PROGRAM) = '"+module+"' "+
 				"AND UPPER(V.STATUS) = 'ACTIVE' "+
-				"AND UPPER(V.TERMINAL) = '"+terminal+"' "+
-				"AND UPPER(V.OSUSER) = '"+System.getProperty("user.name").toUpperCase()+"' "+
+				"AND UPPER(V.TERMINAL) LIKE '%"+terminal+"' "+
+				"AND UPPER(V.OSUSER) LIKE '%"+System.getProperty("user.name").toUpperCase()+"' "+
 				"AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK') "+
 				" ORDER BY U.LAST_ACTIVE_TIME";
-	}
+			}
 
 	public void setSqlModulos(){
 
@@ -96,10 +99,10 @@ public class BancoIF implements Runnable {
 			sqlModulos = "SELECT DISTINCT UPPER(V.PROGRAM) "+
 					"FROM V$SESSION V "+
 					"WHERE UPPER(V.USERNAME) = '"+usuario+"' "+
-					"AND UPPER(V.TERMINAL) = '"+terminal+"' "+
-					"AND UPPER(V.OSUSER) = '"+System.getProperty("user.name").toUpperCase()+"'"+
+					"AND UPPER(V.TERMINAL) LIKE '%"+terminal+"' "+
+					"AND UPPER(V.OSUSER) LIKE '%"+System.getProperty("user.name").toUpperCase()+"'"+
 					" AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK')";
-
+			
 		}catch (UnknownHostException e) {
 			JOptionPane.showMessageDialog(null, "Não foi possível obter o nome da estação local.");
 		}	
@@ -112,7 +115,7 @@ public class BancoIF implements Runnable {
 	public void setModulos() {
 
 		try{
-
+			
 			consultaModulos = getConexao().createStatement();
 			resultadoModulos = consultaModulos.executeQuery(sqlModulos);
 
@@ -142,7 +145,7 @@ public class BancoIF implements Runnable {
 	public void setConexao (String servidor,String usuario,String senha){
 
 		String url,porta="1521",servico="ORCL";
-
+				
 		this.servidor = servidor;
 		this.usuario = usuario;
 		this.senha = senha;

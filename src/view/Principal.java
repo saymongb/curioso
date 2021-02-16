@@ -49,6 +49,8 @@ import database.BuscaCNPJ;
 import javax.swing.JToolBar;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import org.eclipse.wb.swing.FocusTraversalOnArray;
+import java.awt.Component;
 
 
 public class Principal {
@@ -128,7 +130,7 @@ public class Principal {
 		Principal.getContentPane().setLayout(null);
 
 		textUsuario = new JTextField();
-		textUsuario.setBounds(84, 51, 135, 17);
+		textUsuario.setBounds(84, 52, 135, 17);
 		Principal.getContentPane().add(textUsuario);
 		textUsuario.setColumns(10);
 
@@ -160,8 +162,8 @@ public class Principal {
 		Principal.getContentPane().add(labelServidor);
 
 		areaSelect = new JTextArea();
-		areaSelect.setLineWrap(true);
 		areaSelect.setEditable(false);
+		areaSelect.setLineWrap(true);
 		areaSelect.setBounds(229, 51, 509, 472);
 		areaSelect.setAutoscrolls(true);
 		areaSelect.setBorder(BorderFactory.createLineBorder(Color.black));
@@ -301,7 +303,6 @@ public class Principal {
 
 						if(bancoIF.isConnected()){
 
-
 							bancoIFThread = new Thread(bancoIF);
 							preencheThread = new Thread(preenchedor);
 
@@ -362,6 +363,8 @@ public class Principal {
 		bancoIF = new BancoIF(sqlFilaText);
 		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
 		bancoIF.setAreaSelect(areaSelect);
+		Principal.getContentPane().setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{textUsuario, textSenha, textServidor, buttonConnectar, buttonGravar, buttonLimpar, btnAtualizarLista}));
+		Principal.setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{textUsuario, textSenha, textServidor, buttonConnectar, buttonLimpar, buttonGravar}));
 
 	}
 
@@ -444,30 +447,28 @@ public class Principal {
 						// Definir leiaute do frame e quantidade de linhas.
 						meuGrid.setColumns(2);
 						meuGrid.setRows(qtdUsuarios+2);
-						frameResultados.setLayout(meuGrid);
+						frameResultados.getContentPane().setLayout(meuGrid);
 						frameResultados.setMinimumSize(new Dimension(300,200));
 						
 						// Cabeçalho
-						frameResultados.add(new JLabel("Username"));
-						frameResultados.add(new JLabel("Data de criação"));
+						frameResultados.getContentPane().add(new JLabel("Username"));
+						frameResultados.getContentPane().add(new JLabel("Data de criação"));
 						
 						for (ArrayList<String> dadosUsuario : aux.getUsuarios()){
 							
 							// Nome do usuário no banco
 							textGridAux = new JTextField(dadosUsuario.get(0));
 							textGridAux.setEditable(false);
-							frameResultados.add(textGridAux);
+							frameResultados.getContentPane().add(textGridAux);
 							
 							// Data de criação
 							textGridAux = new JTextField(dadosUsuario.get(1));
 							textGridAux.setEditable(false);
-							frameResultados.add(textGridAux);
+							frameResultados.getContentPane().add(textGridAux);
 							
 						}
 						
 						frameResultados.setTitle("Resultados:");
-						frameResultados.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-						//frameResultados.pack();
 						frameResultados.setVisible(true);
 						
 					}
