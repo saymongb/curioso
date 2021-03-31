@@ -13,7 +13,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -24,8 +23,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
-
-import oracle.jdbc.pool.OracleDataSource;
 
 public class BancoIF implements Runnable {
 
@@ -219,10 +216,7 @@ public class BancoIF implements Runnable {
 
 		public static boolean validaCNPJ(String CNPJ){
 
-			String regex = "\\p{Digit}{2}\\."+ // xx.
-					"\\p{Digit}{3}\\."+ // xxx.
-					"\\p{Digit}{3}/"+ // xxx/
-					"\\p{Digit}{4}-\\p{Digit}{2}"; // xxxx-xx
+			String regex = "\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\z";
 			Pattern pt = Pattern.compile(regex);
 			Matcher m = pt.matcher(CNPJ);
 

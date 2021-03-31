@@ -17,7 +17,7 @@ public class AreaSQLThread implements Runnable{
 	private LinkedBlockingQueue<String> sqlFilaText;
 	private JTextArea areaConsultas;
 	private String consultaAtual,temp;
-
+	
 	public AreaSQLThread(LinkedBlockingQueue<String> consultasBanco,
 			JTextArea areaConsultas){
 		this.sqlFilaText = consultasBanco;
@@ -41,10 +41,11 @@ public class AreaSQLThread implements Runnable{
 			if(consultaAtual != null &&
 					!consultasControle.contains(consultaAtual)){
 				consultasControle.add(consultaAtual);
-				temp = "<---Inicio de SQL--->\n"+
-						consultaAtual+'\n'+
-						"<---Fim de SQL.--->\n\n";
+				temp = "-----Inicio de SQL-----\n"+
+						consultaAtual+
+						"\n-----Fim de SQL-----\n\n";
 				areaConsultas.append(temp);
+				
 			}
 		}
 

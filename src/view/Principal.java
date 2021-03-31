@@ -16,6 +16,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
+
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -23,7 +25,6 @@ import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
@@ -46,12 +47,6 @@ import javax.swing.ScrollPaneConstants;
 import controller.AreaSQLThread;
 import controller.BancoIF;
 import database.BuscaCNPJ;
-import javax.swing.JToolBar;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import org.eclipse.wb.swing.FocusTraversalOnArray;
-import java.awt.Component;
-
 
 public class Principal {
 
@@ -92,7 +87,9 @@ public class Principal {
 	private JMenuItem menuItemSobre;
 	private JMenuItem menuItemNovaCon;
 	private JMenuItem mntmBuscarBase;
-	private JProgressBar progressoBarra;
+	private int location_X,location_Y;
+	private Dimension dim;
+	
 	/**
 	 * Launch the application.
 	 */
@@ -121,14 +118,20 @@ public class Principal {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-
+		
 		Principal = new JFrame();
 		Principal.setResizable(false);
 		Principal.setTitle("Curioso");
 		Principal.setBounds(100, 100, 770, 574);
 		Principal.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		Principal.getContentPane().setLayout(null);
-
+		
+		// Para inicializar centralizado na tela
+		dim = Toolkit.getDefaultToolkit().getScreenSize();
+		location_X = (int)dim.width/2-Principal.getSize().width/2;
+		location_Y = (int)dim.height/2-Principal.getSize().height/2;
+		Principal.setLocation(location_X,location_Y);
+		
 		textUsuario = new JTextField();
 		textUsuario.setBounds(84, 52, 135, 17);
 		Principal.getContentPane().add(textUsuario);
@@ -199,7 +202,7 @@ public class Principal {
 						null,
 						null,
 						"XX.XXX.XXX/XXXX-XX");
-				
+
 				exibirBuscaCNPJ(CNPJ);
 			}
 		});
@@ -289,7 +292,7 @@ public class Principal {
 
 		// Inicia-interrompe gravação do SQL
 		buttonGravar.addMouseListener(new MouseAdapter() {
-
+			// A lógica deste método está muito complexa, deve ser melhorada.
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 
@@ -363,9 +366,7 @@ public class Principal {
 		bancoIF = new BancoIF(sqlFilaText);
 		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
 		bancoIF.setAreaSelect(areaSelect);
-		Principal.getContentPane().setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{textUsuario, textSenha, textServidor, buttonConnectar, buttonGravar, buttonLimpar, btnAtualizarLista}));
-		Principal.setFocusTraversalPolicy(new FocusTraversalOnArray(new Component[]{textUsuario, textSenha, textServidor, buttonConnectar, buttonLimpar, buttonGravar}));
-
+		
 	}
 
 	public void reiniciar (){
@@ -410,17 +411,13 @@ public class Principal {
 
 	public void exibirBuscaCNPJ(String CNPJ){
 		
+		int location_X, location_Y;
 		GridLayout meuGrid = new GridLayout();
 		JFrame frameResultados = new JFrame();
 		int qtdUsuarios;
 		JTextField textGridAux;
-		
-		if(!BancoIF.validaCNPJ(CNPJ)){
-			JOptionPane.showMessageDialog(null,
-					"CNPJ inválido!",
-					"Atenção!",
-					JOptionPane.ERROR_MESSAGE);
-		}else{
+
+		if(BancoIF.validaCNPJ(CNPJ)){
 
 			if(bancoIF.getConexao() == null){
 
@@ -428,56 +425,66 @@ public class Principal {
 
 			}else{
 				/// Apenas para teste, implementar validação do formulário.
-				progressoBarra = new JProgressBar();
 				BuscaCNPJ aux = new BuscaCNPJ(bancoIF.getConexao());
 				aux.setUsername(bancoIF.getUsuario());
 				aux.setCNPJ(CNPJ);
 				Thread t1 = new Thread(aux);
 				t1.start();
-				
+
 				try {
-					
+
 					t1.join();
 					qtdUsuarios = aux.getUsuarios().size(); 
-					
+
 					if (qtdUsuarios == 0){
 						JOptionPane.showMessageDialog(null, "Não existem usuários no banco com o CNPJ:"+CNPJ);
 					}else{
-						
+
 						// Definir leiaute do frame e quantidade de linhas.
 						meuGrid.setColumns(2);
 						meuGrid.setRows(qtdUsuarios+2);
 						frameResultados.getContentPane().setLayout(meuGrid);
 						frameResultados.setMinimumSize(new Dimension(300,200));
-						
+
 						// Cabeçalho
 						frameResultados.getContentPane().add(new JLabel("Username"));
 						frameResultados.getContentPane().add(new JLabel("Data de criação"));
-						
+
 						for (ArrayList<String> dadosUsuario : aux.getUsuarios()){
-							
+
 							// Nome do usuário no banco
 							textGridAux = new JTextField(dadosUsuario.get(0));
 							textGridAux.setEditable(false);
 							frameResultados.getContentPane().add(textGridAux);
-							
+
 							// Data de criação
 							textGridAux = new JTextField(dadosUsuario.get(1));
 							textGridAux.setEditable(false);
 							frameResultados.getContentPane().add(textGridAux);
-							
+
 						}
 						
 						frameResultados.setTitle("Resultados:");
+						location_X = (int)dim.width/2-frameResultados.getSize().width/2;
+						location_Y = (int)dim.height/2-frameResultados.getSize().width/2;
+						frameResultados.setLocation(location_X, location_Y);
 						frameResultados.setVisible(true);
-						
+
 					}
-					
+
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+		}else{
+
+			JOptionPane.showMessageDialog(
+					null,
+					"CNPJ inválido!",
+					"Atenção!",
+					JOptionPane.ERROR_MESSAGE
+					);
 		}
 	}
 }
