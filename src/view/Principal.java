@@ -3,12 +3,12 @@
  * 
  * Corrigir:
  * 	1. Problema em determinadas consultas em que a aplicação
- * 		não localiza os módulos executando na máquina.
- * 
+ * 		Situação: validar. 
  * A fazer:
  * 	1. Implementar barra de progresso durante a busca de CNPJ.
  * 	2. Implementar gravação de preferências de conexão via arquivo. 
- * 
+ * 	3. Alterar o SQL das consultas utilizando a lógica da funcionalidade sessions
+ * 		do PL/SQL Developer. =>  select * from v$open_cursor where sid = :sid
  * */
 package view;
 
@@ -36,6 +36,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.regex.Matcher;
 
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -47,6 +48,11 @@ import javax.swing.ScrollPaneConstants;
 import controller.AreaSQLThread;
 import controller.BancoIF;
 import database.BuscaCNPJ;
+import org.eclipse.wb.swing.FocusTraversalOnArray;
+import java.awt.Component;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.ListModel;
 
 public class Principal {
 
@@ -77,9 +83,8 @@ public class Principal {
 	private JButton buttonConnectar;
 	private JMenuBar menuBar;
 	private JMenu mnNewMenu_1;
-	private JList<String> listaModulos;
-	private JScrollPane scrolLista;
-	private JScrollPane scrolSelects;
+	private JList<String> listaModulos, listaUsuariosOS;
+	private JScrollPane scrolLista, scrolSelects, scrollUsuariosOS;
 	private JLabel labelModulos;
 	private DefaultListModel<String> modeloLista;
 	private JButton btnAtualizarLista;
@@ -89,7 +94,7 @@ public class Principal {
 	private JMenuItem mntmBuscarBase;
 	private int location_X,location_Y;
 	private Dimension dim;
-	
+
 	/**
 	 * Launch the application.
 	 */
@@ -118,72 +123,70 @@ public class Principal {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		
+
 		Principal = new JFrame();
 		Principal.setResizable(false);
 		Principal.setTitle("Curioso");
-		Principal.setBounds(100, 100, 770, 574);
+		Principal.setBounds(100, 100, 898, 574);
 		Principal.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		Principal.getContentPane().setLayout(null);
-		
+
 		// Para inicializar centralizado na tela
 		dim = Toolkit.getDefaultToolkit().getScreenSize();
 		location_X = (int)dim.width/2-Principal.getSize().width/2;
 		location_Y = (int)dim.height/2-Principal.getSize().height/2;
 		Principal.setLocation(location_X,location_Y);
-		
+
 		textUsuario = new JTextField();
-		textUsuario.setBounds(84, 52, 135, 17);
+		textUsuario.setBounds(10, 57, 187, 17);
 		Principal.getContentPane().add(textUsuario);
 		textUsuario.setColumns(10);
 
 		labelUsuario = new JLabel("Usuário:");
-		labelUsuario.setBounds(10, 54, 64, 14);
+		labelUsuario.setBounds(10, 32, 187, 14);
 		Principal.getContentPane().add(labelUsuario);
 
 		labelSenha = new JLabel("Senha:");
-		labelSenha.setBounds(10, 80, 62, 14);
+		labelSenha.setBounds(10, 85, 187, 14);
 		Principal.getContentPane().add(labelSenha);
 
 		textServidor = new JTextField();
 		textServidor.setToolTipText("Nome ou IP da esta\u00E7\u00E3o.");
 		textServidor.setColumns(10);
-		textServidor.setBounds(84, 107, 135, 17);
+		textServidor.setBounds(10, 163, 187, 17);
 		Principal.getContentPane().add(textServidor);
 
-		buttonGravar = new JButton("Gravar");
-		buttonGravar.setBounds(84, 203, 135, 23);
+		buttonGravar = new JButton("Gravar consultas");
+		buttonGravar.setBounds(10, 225, 187, 23);
 		Principal.getContentPane().add(buttonGravar);
 
 		textSenha = new JPasswordField ();
-		textSenha.setBounds(84, 79, 135, 17);
+		textSenha.setBounds(10, 110, 187, 17);
 		textSenha.setColumns(10);
 		Principal.getContentPane().add(textSenha);
 
-		labelServidor = new JLabel("Servidor:");
-		labelServidor.setBounds(10, 109, 64, 14);
+		labelServidor = new JLabel("Nome do computador do servidor:");
+		labelServidor.setBounds(10, 138, 204, 14);
 		Principal.getContentPane().add(labelServidor);
-
-		areaSelect = new JTextArea();
-		areaSelect.setEditable(false);
-		areaSelect.setLineWrap(true);
-		areaSelect.setBounds(229, 51, 509, 472);
-		areaSelect.setAutoscrolls(true);
-		areaSelect.setBorder(BorderFactory.createLineBorder(Color.black));
 
 		scrolSelects = new JScrollPane();
 		scrolSelects.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		scrolSelects.setSize(500, 472);
-		scrolSelects.setLocation(238, 51);
-		scrolSelects.setViewportView(areaSelect);
+		scrolSelects.setSize(618, 472);
+		scrolSelects.setLocation(255, 52);
 		Principal.getContentPane().add(scrolSelects);
 
-		buttonConnectar = new JButton("Conectar!");
-		buttonConnectar.setBounds(84, 135, 135, 23);
+		buttonConnectar = new JButton("Conectar ao banco");
+		buttonConnectar.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent arg0) {
+				// Implementar gravação nesta ação também.
+			}
+		});
+		buttonConnectar.setBounds(10, 191, 187, 23);
 		Principal.getContentPane().add(buttonConnectar);
 
 		menuBar = new JMenuBar();
-		menuBar.setBounds(0, 0, 764, 21);
+		menuBar.setBounds(0, 0, 892, 21);
 
 		mnNewMenu_1 = new JMenu("Op\u00E7\u00F5es");
 
@@ -239,33 +242,42 @@ public class Principal {
 		Principal.getContentPane().add(menuBar);
 
 		scrolLista = new JScrollPane();
-		scrolLista.setSize(135, 142);
-		scrolLista.setLocation(84, 260);
+		scrolLista.setSize(187, 83);
+		scrolLista.setLocation(10, 318);
 		modeloLista = new DefaultListModel<String>();
+		Principal.getContentPane().add(scrolLista);
 		listaModulos = new JList<String>(modeloLista);
+		scrolLista.setViewportView(listaModulos);
 		listaModulos.setBackground(Color.WHITE);
 		listaModulos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		listaModulos.setLayoutOrientation(JList.VERTICAL_WRAP);
 		listaModulos.setVisibleRowCount(-1);
-		scrolLista.add(listaModulos);
-		scrolLista.setViewportView(listaModulos);
-		Principal.getContentPane().add(scrolLista);
 
+		// Alterar o módulo no SQL
+		listaModulos.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent arg0) {
+				bancoIF.getConsultas().clear();
+				if(listaModulos.getSelectedValue() != null){
+					bancoIF.setSql(listaModulos.getSelectedValue());
+					areaSelect.setText("");	
+				}
+			}
+		});
+		
 		labelModulos = new JLabel("M\u00F3dulos conectados:");
-		labelModulos.setBounds(84, 235, 135, 14);
+		labelModulos.setBounds(10, 293, 135, 14);
 		Principal.getContentPane().add(labelModulos);
 
-		btnAtualizarLista = new JButton("Atualizar lista");
-		btnAtualizarLista.setBounds(84, 409, 135, 23);
+		btnAtualizarLista = new JButton("Atualizar lista de m\u00F3dulos");
+		btnAtualizarLista.setBounds(10, 412, 187, 23);
 		btnAtualizarLista.setEnabled(false);
 		Principal.getContentPane().add(btnAtualizarLista);
 
-		JLabel lblSql = new JLabel("SQL");
-		lblSql.setLabelFor(areaSelect);
-		lblSql.setBounds(465, 32, 46, 14);
+		JLabel lblSql = new JLabel("Resultado");
+		lblSql.setBounds(531, 32, 64, 14);
 		Principal.getContentPane().add(lblSql);
 
-		buttonLimpar = new JButton("Limpar SQL");
+		buttonLimpar = new JButton("Limpar resultados de SQL");
 		buttonLimpar.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
@@ -273,7 +285,7 @@ public class Principal {
 				bancoIF.getConsultas().clear();
 			}
 		});
-		buttonLimpar.setBounds(84, 169, 135, 23);
+		buttonLimpar.setBounds(10, 259, 187, 23);
 		Principal.getContentPane().add(buttonLimpar);
 
 		// Listeners
@@ -346,17 +358,8 @@ public class Principal {
 					//Preencher lista
 					listaModulos.setListData(bancoIF.getModulos());
 					btnAtualizarLista.setEnabled(true);
-				}
-			}
-		});
-
-		// Alterar o módulo no SQL
-		listaModulos.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent arg0) {
-				bancoIF.getConsultas().clear();
-				if(listaModulos.getSelectedValue() != null){
-					bancoIF.setSql(listaModulos.getSelectedValue());
-					areaSelect.setText("");	
+					// Preencher lista de usuários
+					bancoIF.setSqlUsuariosOS();
 				}
 			}
 		});
@@ -364,9 +367,27 @@ public class Principal {
 		//Variáveis de controle
 		sqlFilaText = new LinkedBlockingQueue<String>();
 		bancoIF = new BancoIF(sqlFilaText);
+
+		JLabel lblUsuriosDoSistema = new JLabel("Usu\u00E1rios do sistema operacional:");
+		lblUsuriosDoSistema.setBounds(10, 446, 190, 14);
+		Principal.getContentPane().add(lblUsuriosDoSistema);
+
+		areaSelect = new JTextArea();
+		Principal.getContentPane().add(areaSelect);
+		areaSelect.setEditable(false);
+		areaSelect.setLineWrap(true);
+		areaSelect.setBounds(373, 52, 498, 470);
+		areaSelect.setAutoscrolls(true);
+		areaSelect.setBorder(BorderFactory.createLineBorder(Color.black));
+		lblSql.setLabelFor(areaSelect);
 		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
 		bancoIF.setAreaSelect(areaSelect);
-		
+
+		scrollUsuariosOS = new JScrollPane();
+		scrollUsuariosOS.setBounds(10, 471, 190, 53);
+		Principal.getContentPane().add(scrollUsuariosOS);
+		listaUsuariosOS = new JList<String>(modeloLista);
+		scrollUsuariosOS.setViewportView(listaUsuariosOS);
 	}
 
 	public void reiniciar (){
@@ -410,14 +431,14 @@ public class Principal {
 	}
 
 	public void exibirBuscaCNPJ(String CNPJ){
-		
+
 		int location_X, location_Y;
 		GridLayout meuGrid = new GridLayout();
 		JFrame frameResultados = new JFrame();
 		int qtdUsuarios;
 		JTextField textGridAux;
 
-		if(BancoIF.validaCNPJ(CNPJ)){
+		if(CNPJ != null && BancoIF.validaCNPJ(CNPJ)){
 
 			if(bancoIF.getConexao() == null){
 
@@ -463,7 +484,7 @@ public class Principal {
 							frameResultados.getContentPane().add(textGridAux);
 
 						}
-						
+
 						frameResultados.setTitle("Resultados:");
 						location_X = (int)dim.width/2-frameResultados.getSize().width/2;
 						location_Y = (int)dim.height/2-frameResultados.getSize().width/2;

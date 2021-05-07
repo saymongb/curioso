@@ -13,6 +13,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -28,13 +29,14 @@ public class BancoIF implements Runnable {
 
 	// Variáveis de controle.
 	//private PreparedStatement sql;
+	private static String nomeDaAplicacao = "Curioso.exe";
 	private Statement consulta,consultaModulos;
 	private ResultSet resultado,resultadoModulos;
 	private TreeSet<String> consultas;
 	private LinkedBlockingQueue<String> sqlFilaText;
 	private Vector<String> modulos;
-	private String sqlConsulta,sqlresultado,sqlModulos,usuario,servidor,senha;
-	
+	private String sqlConsulta,sqlresultado,sqlModulos,sqlUsuariosOS;
+	private String usuario,servidor,senha,nomeComputador,usuarioOS;
 	private Connection conexao;
 	private boolean gravar;
 	private JTextArea areaSelect;
@@ -53,22 +55,27 @@ public class BancoIF implements Runnable {
 
 	// Inicializar componentes
 	public void inicializar(){
+
 		consultas = new TreeSet<String>();
 		modulos = new Vector<String>();
 		gravar = false;
+
+		try {
+
+			nomeComputador = InetAddress.getLocalHost().getHostName();
+			nomeComputador.toUpperCase();
+			usuarioOS = System.getProperty("user.name").toUpperCase();
+
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(null, "Não foi possível obter o nome da máquina ou do usuário.");
+		}
+
 	}
 
 	// Getters e Setters
 
 	public void setSql(String module) {
-
-		String terminal = "%";
-		try {
-			terminal = InetAddress.getLocalHost().getHostName();
-			terminal = terminal.toUpperCase();
-		} catch (UnknownHostException e) {
-			JOptionPane.showMessageDialog(null, "Não foi possível obter o nome da estação local.");
-		}
 
 		module = module.toUpperCase();
 
@@ -78,31 +85,33 @@ public class BancoIF implements Runnable {
 				"AND V.SQL_ID = U.sql_id "+
 				"AND UPPER(V.PROGRAM) = '"+module+"' "+
 				"AND UPPER(V.STATUS) = 'ACTIVE' "+
-				"AND UPPER(V.TERMINAL) LIKE '%"+terminal+"' "+
-				"AND UPPER(V.OSUSER) LIKE '%"+System.getProperty("user.name").toUpperCase()+"' "+
+				"AND (UPPER(V.TERMINAL) LIKE '%"+nomeComputador+"' "+
+				"OR UPPER(V.MACHINE) LIKE '%"+nomeComputador+"') "+
+				"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"' "+
 				"AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK') "+
 				" ORDER BY U.LAST_ACTIVE_TIME";
-			}
+	}
 
 	public void setSqlModulos(){
 
-		try {
+		sqlModulos = "SELECT DISTINCT UPPER(V.PROGRAM) "+
+				"FROM V$SESSION V "+
+				"WHERE UPPER(V.USERNAME) = '"+usuario+"' "+
+				"AND (UPPER(V.TERMINAL) LIKE '%"+nomeComputador+"'"+
+				"OR UPPER(V.MACHINE) LIKE '%"+nomeComputador+"') "+
+				"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"'"+
+				" AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK')";
+	}
 
-			String terminal;
+	public void setSqlUsuariosOS(){
 
-			terminal = InetAddress.getLocalHost().getHostName();
-			terminal = terminal.toUpperCase();
+		sqlUsuariosOS = "SELECT DISTINCT SUBSTR(S.OSUSER, (INSTR(S.OSUSER, '\\', -1) + 1)) AS OS_USER "+
+				"FROM V$SESSION S "+
+				"WHERE S.USERNAME LIKE '"+usuario+"' "+
+				"AND (UPPER(S.MACHINE) LIKE '%"+nomeComputador+"' OR "+
+				"UPPER(S.TERMINAL) LIKE '%"+nomeComputador+"')";
+		System.out.println(sqlUsuariosOS);
 
-			sqlModulos = "SELECT DISTINCT UPPER(V.PROGRAM) "+
-					"FROM V$SESSION V "+
-					"WHERE UPPER(V.USERNAME) = '"+usuario+"' "+
-					"AND UPPER(V.TERMINAL) LIKE '%"+terminal+"' "+
-					"AND UPPER(V.OSUSER) LIKE '%"+System.getProperty("user.name").toUpperCase()+"'"+
-					" AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK')";
-			
-		}catch (UnknownHostException e) {
-			JOptionPane.showMessageDialog(null, "Não foi possível obter o nome da estação local.");
-		}	
 	}
 
 	public void setGravar(boolean gravar) {
@@ -111,14 +120,20 @@ public class BancoIF implements Runnable {
 
 	public void setModulos() {
 
+		String aux;
+
 		try{
-			
+
 			consultaModulos = getConexao().createStatement();
 			resultadoModulos = consultaModulos.executeQuery(sqlModulos);
 
 			while(resultadoModulos.next()){
 
-				modulos.add(resultadoModulos.getString(1));
+				aux = resultadoModulos.getString(1);
+				if(!aux.toUpperCase().equals(BancoIF.nomeDaAplicacao) && !aux.toUpperCase().equals("JDBC THIN CLIENT")){
+					modulos.add(aux);
+				}
+				//modulos.add(resultadoModulos.getString(1));
 			}
 			resultadoModulos.close();
 		}catch(SQLException e){
@@ -142,10 +157,15 @@ public class BancoIF implements Runnable {
 	public void setConexao (String servidor,String usuario,String senha){
 
 		String url,porta="1521",servico="ORCL";
-				
+		Properties props = new Properties();
+
 		this.servidor = servidor;
 		this.usuario = usuario;
 		this.senha = senha;
+
+		props.setProperty("ApplicationName",BancoIF.nomeDaAplicacao);
+		props.setProperty("user", usuario);
+		props.setProperty("password",senha);
 
 		// Ip ou nome da estação onde está a base de dados
 		url = "jdbc:oracle:thin:@" + servidor + ":" + porta + ":" + servico;
@@ -153,10 +173,13 @@ public class BancoIF implements Runnable {
 		if(conexao == null){
 
 			try{
-				conexao = DriverManager.getConnection(url,usuario,senha);
-				JOptionPane.showMessageDialog(null, "Conexão estabelecida com sucesso!");
+
+				//conexao = DriverManager.getConnection(url,usuario,senha);
+				conexao = DriverManager.getConnection(url,props);
 				setSqlModulos();
 				setModulos();
+				JOptionPane.showMessageDialog(null, "Conexão estabelecida com sucesso!");
+
 			}catch (SQLException e){
 				JOptionPane.showMessageDialog(null, "Não foi possível estabelecer comunicação com o banco!");
 				JOptionPane.showMessageDialog(null, e.getMessage());
@@ -214,22 +237,22 @@ public class BancoIF implements Runnable {
 		}
 	}
 
-		public static boolean validaCNPJ(String CNPJ){
+	public static boolean validaCNPJ(String CNPJ){
 
-			String regex = "\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\z";
-			Pattern pt = Pattern.compile(regex);
-			Matcher m = pt.matcher(CNPJ);
+		String regex = "\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\z";
+		Pattern pt = Pattern.compile(regex);
 
-			return m.matches();
-		}
-		
-		public String getUsuario() {
-			return usuario;
-		}
-
-		public void setUsuario(String usuario) {
-			this.usuario = usuario;
-		}
-
+		Matcher m = pt.matcher(CNPJ);
+		return m.matches();
 
 	}
+
+	public String getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(String usuario) {
+		this.usuario = usuario;
+	}
+
+}
