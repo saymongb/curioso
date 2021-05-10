@@ -30,13 +30,13 @@ public class BancoIF implements Runnable {
 	// Variáveis de controle.
 	//private PreparedStatement sql;
 	private static String nomeDaAplicacao = "Curioso.exe";
-	private Statement consulta,consultaModulos;
-	private ResultSet resultado,resultadoModulos;
+	private Statement consulta,consultaModulos,consultaUsuariosOS;
+	private ResultSet resultado,resultadoModulos,resultadoUsuariosOS;
 	private TreeSet<String> consultas;
 	private LinkedBlockingQueue<String> sqlFilaText;
-	private Vector<String> modulos;
+	private Vector<String> modulos,usuariosOS;
 	private String sqlConsulta,sqlresultado,sqlModulos,sqlUsuariosOS;
-	private String usuario,servidor,senha,nomeComputador,usuarioOS;
+	private String usuario,servidor,senha,nomeComputador,nomeModulo,usuarioOS;
 	private Connection conexao;
 	private boolean gravar;
 	private JTextArea areaSelect;
@@ -58,6 +58,7 @@ public class BancoIF implements Runnable {
 
 		consultas = new TreeSet<String>();
 		modulos = new Vector<String>();
+		usuariosOS = new Vector<String>();
 		gravar = false;
 
 		try {
@@ -74,22 +75,22 @@ public class BancoIF implements Runnable {
 	}
 
 	// Getters e Setters
+	public void setSql() {
 
-	public void setSql(String module) {
-
-		module = module.toUpperCase();
-
-		sqlConsulta = "SELECT U.SQL_FULLTEXT "+
+		
+		sqlConsulta = "SELECT TRIM(U.SQL_FULLTEXT) "+
 				"FROM V$SESSION V, V$SQL U "+
 				"WHERE UPPER(V.USERNAME) = '"+usuario+"' "+
 				"AND V.SQL_ID = U.sql_id "+
-				"AND UPPER(V.PROGRAM) = '"+module+"' "+
+				"AND UPPER(V.PROGRAM) = '"+nomeModulo+"' "+
 				"AND UPPER(V.STATUS) = 'ACTIVE' "+
 				"AND (UPPER(V.TERMINAL) LIKE '%"+nomeComputador+"' "+
 				"OR UPPER(V.MACHINE) LIKE '%"+nomeComputador+"') "+
 				"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"' "+
 				"AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK') "+
 				" ORDER BY U.LAST_ACTIVE_TIME";
+		
+		System.out.println("Texto da consulta:"+sqlConsulta+"\n");
 	}
 
 	public void setSqlModulos(){
@@ -99,7 +100,7 @@ public class BancoIF implements Runnable {
 				"WHERE UPPER(V.USERNAME) = '"+usuario+"' "+
 				"AND (UPPER(V.TERMINAL) LIKE '%"+nomeComputador+"'"+
 				"OR UPPER(V.MACHINE) LIKE '%"+nomeComputador+"') "+
-				"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"'"+
+				//"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"'"+
 				" AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK')";
 	}
 
@@ -110,7 +111,6 @@ public class BancoIF implements Runnable {
 				"WHERE S.USERNAME LIKE '"+usuario+"' "+
 				"AND (UPPER(S.MACHINE) LIKE '%"+nomeComputador+"' OR "+
 				"UPPER(S.TERMINAL) LIKE '%"+nomeComputador+"')";
-		System.out.println(sqlUsuariosOS);
 
 	}
 
@@ -150,12 +150,50 @@ public class BancoIF implements Runnable {
 		return modulos;
 	}
 
+	public Vector<String> getUsuariosOS() {
+		
+		return usuariosOS;
+	}
+
+	public void setUsuariosOS() {
+		// Consulta banco e preenche lista
+		String aux;
+
+		try{
+
+			consultaUsuariosOS = getConexao().createStatement();
+			resultadoUsuariosOS = consultaUsuariosOS.executeQuery(sqlUsuariosOS);
+
+			while(resultadoUsuariosOS.next()){
+
+				aux = resultadoUsuariosOS.getString("OS_USER");
+				usuariosOS.add(aux.toUpperCase());
+			}
+			resultadoUsuariosOS.close();
+			
+		}catch(SQLException e){
+
+			JOptionPane.showMessageDialog(null,"Não foi possível obter lista de usuários!");
+			JOptionPane.showMessageDialog(null, e.getMessage());
+
+		}catch(Exception e){
+			
+			JOptionPane.showMessageDialog(null, e.getMessage());
+		
+		}
+	}
+
 	public boolean getGravar(){
 		return gravar;
 	}
 
+	/*
+	 * Conecta aplicação com o banco de dados e
+	 * realiza as chamadas, internas, aos métodos necessários
+	 * para preencher a lista de módulos e lista de usuários.
+	 * */
 	public void setConexao (String servidor,String usuario,String senha){
-
+		
 		String url,porta="1521",servico="ORCL";
 		Properties props = new Properties();
 
@@ -178,6 +216,8 @@ public class BancoIF implements Runnable {
 				conexao = DriverManager.getConnection(url,props);
 				setSqlModulos();
 				setModulos();
+				setSqlUsuariosOS();
+				setUsuariosOS();
 				JOptionPane.showMessageDialog(null, "Conexão estabelecida com sucesso!");
 
 			}catch (SQLException e){
@@ -250,9 +290,27 @@ public class BancoIF implements Runnable {
 	public String getUsuario() {
 		return usuario;
 	}
-
+	
 	public void setUsuario(String usuario) {
 		this.usuario = usuario;
+	}
+
+	public String getUsuarioOS() {
+		return usuarioOS;
+	}
+
+	public void setUsuarioOS(String usuarioOS) {
+		this.usuarioOS = usuarioOS;
+	}
+
+	public String getNomeModulo() {
+		return nomeModulo;
+	}
+
+	public void setNomeModulo(String nomeModulo) {
+		
+		this.nomeModulo = nomeModulo.toUpperCase();
+		
 	}
 
 }

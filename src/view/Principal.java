@@ -4,11 +4,10 @@
  * Corrigir:
  * 	1. Problema em determinadas consultas em que a aplicação
  * 		Situação: validar. 
+ *  2. Problema com a área de resultados das consultas.
  * A fazer:
  * 	1. Implementar barra de progresso durante a busca de CNPJ.
  * 	2. Implementar gravação de preferências de conexão via arquivo. 
- * 	3. Alterar o SQL das consultas utilizando a lógica da funcionalidade sessions
- * 		do PL/SQL Developer. =>  select * from v$open_cursor where sid = :sid
  * */
 package view;
 
@@ -138,7 +137,7 @@ public class Principal {
 		Principal.setLocation(location_X,location_Y);
 
 		textUsuario = new JTextField();
-		textUsuario.setBounds(10, 57, 187, 17);
+		textUsuario.setBounds(10, 52, 187, 22);
 		Principal.getContentPane().add(textUsuario);
 		textUsuario.setColumns(10);
 
@@ -153,7 +152,7 @@ public class Principal {
 		textServidor = new JTextField();
 		textServidor.setToolTipText("Nome ou IP da esta\u00E7\u00E3o.");
 		textServidor.setColumns(10);
-		textServidor.setBounds(10, 163, 187, 17);
+		textServidor.setBounds(10, 158, 187, 22);
 		Principal.getContentPane().add(textServidor);
 
 		buttonGravar = new JButton("Gravar consultas");
@@ -161,27 +160,29 @@ public class Principal {
 		Principal.getContentPane().add(buttonGravar);
 
 		textSenha = new JPasswordField ();
-		textSenha.setBounds(10, 110, 187, 17);
+		textSenha.setBounds(10, 105, 187, 22);
 		textSenha.setColumns(10);
 		Principal.getContentPane().add(textSenha);
 
 		labelServidor = new JLabel("Nome do computador do servidor:");
 		labelServidor.setBounds(10, 138, 204, 14);
 		Principal.getContentPane().add(labelServidor);
+		
+		areaSelect = new JTextArea();
+		areaSelect.setEditable(false);
+		areaSelect.setLineWrap(true);
+		areaSelect.setBounds(215, 52, 658, 470);
+		areaSelect.setAutoscrolls(true);
+		areaSelect.setBorder(BorderFactory.createLineBorder(Color.black));
 
 		scrolSelects = new JScrollPane();
 		scrolSelects.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		scrolSelects.setSize(618, 472);
-		scrolSelects.setLocation(255, 52);
+		scrolSelects.setSize(658, 470);
+		scrolSelects.setLocation(215, 52);
+		scrolSelects.setViewportView(areaSelect);
 		Principal.getContentPane().add(scrolSelects);
 
 		buttonConnectar = new JButton("Conectar ao banco");
-		buttonConnectar.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent arg0) {
-				// Implementar gravação nesta ação também.
-			}
-		});
 		buttonConnectar.setBounds(10, 191, 187, 23);
 		Principal.getContentPane().add(buttonConnectar);
 
@@ -258,12 +259,13 @@ public class Principal {
 			public void valueChanged(ListSelectionEvent arg0) {
 				bancoIF.getConsultas().clear();
 				if(listaModulos.getSelectedValue() != null){
-					bancoIF.setSql(listaModulos.getSelectedValue());
+					bancoIF.setNomeModulo(listaModulos.getSelectedValue());
+					bancoIF.setSql();
 					areaSelect.setText("");	
 				}
 			}
 		});
-		
+
 		labelModulos = new JLabel("M\u00F3dulos conectados:");
 		labelModulos.setBounds(10, 293, 135, 14);
 		Principal.getContentPane().add(labelModulos);
@@ -274,7 +276,7 @@ public class Principal {
 		Principal.getContentPane().add(btnAtualizarLista);
 
 		JLabel lblSql = new JLabel("Resultado");
-		lblSql.setBounds(531, 32, 64, 14);
+		lblSql.setBounds(519, 32, 64, 14);
 		Principal.getContentPane().add(lblSql);
 
 		buttonLimpar = new JButton("Limpar resultados de SQL");
@@ -359,7 +361,7 @@ public class Principal {
 					listaModulos.setListData(bancoIF.getModulos());
 					btnAtualizarLista.setEnabled(true);
 					// Preencher lista de usuários
-					bancoIF.setSqlUsuariosOS();
+					listaUsuariosOS.setListData(bancoIF.getUsuariosOS());
 				}
 			}
 		});
@@ -372,14 +374,6 @@ public class Principal {
 		lblUsuriosDoSistema.setBounds(10, 446, 190, 14);
 		Principal.getContentPane().add(lblUsuriosDoSistema);
 
-		areaSelect = new JTextArea();
-		Principal.getContentPane().add(areaSelect);
-		areaSelect.setEditable(false);
-		areaSelect.setLineWrap(true);
-		areaSelect.setBounds(373, 52, 498, 470);
-		areaSelect.setAutoscrolls(true);
-		areaSelect.setBorder(BorderFactory.createLineBorder(Color.black));
-		lblSql.setLabelFor(areaSelect);
 		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
 		bancoIF.setAreaSelect(areaSelect);
 
@@ -388,6 +382,32 @@ public class Principal {
 		Principal.getContentPane().add(scrollUsuariosOS);
 		listaUsuariosOS = new JList<String>(modeloLista);
 		scrollUsuariosOS.setViewportView(listaUsuariosOS);
+		listaUsuariosOS.setBackground(Color.WHITE);
+		listaUsuariosOS.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		listaUsuariosOS.setLayoutOrientation(JList.VERTICAL_WRAP);
+		listaUsuariosOS.setVisibleRowCount(-1);
+
+		buttonConnectar.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent arg0) {
+				// Implementar gravação nesta ação também.
+			}
+		});
+
+		// Alterar usuário do sistema operacional no SQL
+		listaUsuariosOS.addListSelectionListener(new ListSelectionListener() {
+
+			public void valueChanged(ListSelectionEvent arg0) {
+
+				bancoIF.getConsultas().clear();
+				if(listaUsuariosOS.getSelectedValue() != null){
+					bancoIF.setUsuarioOS(listaUsuariosOS.getSelectedValue());
+					bancoIF.setSql();
+					areaSelect.setText("");	
+				}
+			}
+		});
+
 	}
 
 	public void reiniciar (){

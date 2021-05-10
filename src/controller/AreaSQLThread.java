@@ -41,9 +41,9 @@ public class AreaSQLThread implements Runnable{
 			if(consultaAtual != null &&
 					!consultasControle.contains(consultaAtual)){
 				consultasControle.add(consultaAtual);
-				temp = "-----Inicio de SQL-----\n"+
+				temp = "\n-----Inicio de SQL-----\n"+
 						consultaAtual+
-						"\n-----Fim de SQL-----\n\n";
+						"\n-----Fim de SQL-----\n";
 				areaConsultas.append(temp);
 				
 			}
