@@ -4,8 +4,7 @@
  * Corrigir:
  * 	1. Problema em determinadas consultas em que a aplicação
  * 		Situação: validar. 
- *  2. Problema com a área de resultados das consultas.
- * A fazer:
+ * 	1. Preencher USUÁRIO ADMIN e senha padrão,default.
  * 	1. Implementar barra de progresso durante a busca de CNPJ.
  * 	2. Implementar gravação de preferências de conexão via arquivo. 
  * */
@@ -16,7 +15,6 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
-
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
@@ -35,23 +33,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.regex.Matcher;
-
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.ScrollPaneConstants;
-
 import controller.AreaSQLThread;
 import controller.BancoIF;
 import database.BuscaCNPJ;
-import org.eclipse.wb.swing.FocusTraversalOnArray;
-import java.awt.Component;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import javax.swing.ListModel;
 
 public class Principal {
 
@@ -67,8 +59,7 @@ public class Principal {
 	 * consome desse buffer para preencher a tela.
 	 * */
 	private LinkedBlockingQueue<String> sqlFilaText;
-	//private String modulo;
-
+	
 	// Componentes da tela
 	private JFrame Principal;
 	private JTextField textUsuario;
@@ -137,6 +128,7 @@ public class Principal {
 		Principal.setLocation(location_X,location_Y);
 
 		textUsuario = new JTextField();
+		textUsuario.setText("ADMIN");
 		textUsuario.setBounds(10, 52, 187, 22);
 		Principal.getContentPane().add(textUsuario);
 		textUsuario.setColumns(10);
@@ -150,6 +142,7 @@ public class Principal {
 		Principal.getContentPane().add(labelSenha);
 
 		textServidor = new JTextField();
+		textServidor.setText("SERVERCIS");
 		textServidor.setToolTipText("Nome ou IP da esta\u00E7\u00E3o.");
 		textServidor.setColumns(10);
 		textServidor.setBounds(10, 158, 187, 22);
@@ -162,6 +155,7 @@ public class Principal {
 		textSenha = new JPasswordField ();
 		textSenha.setBounds(10, 105, 187, 22);
 		textSenha.setColumns(10);
+		textSenha.setText("MANAGER");
 		Principal.getContentPane().add(textSenha);
 
 		labelServidor = new JLabel("Nome do computador do servidor:");
@@ -272,7 +266,6 @@ public class Principal {
 
 		btnAtualizarLista = new JButton("Atualizar lista de m\u00F3dulos");
 		btnAtualizarLista.setBounds(10, 412, 187, 23);
-		btnAtualizarLista.setEnabled(false);
 		Principal.getContentPane().add(btnAtualizarLista);
 
 		JLabel lblSql = new JLabel("Resultado");
@@ -359,7 +352,7 @@ public class Principal {
 					buttonConnectar.setText("Conectado.");
 					//Preencher lista
 					listaModulos.setListData(bancoIF.getModulos());
-					btnAtualizarLista.setEnabled(true);
+					//btnAtualizarLista.setEnabled(true);
 					// Preencher lista de usuários
 					listaUsuariosOS.setListData(bancoIF.getUsuariosOS());
 				}
@@ -375,8 +368,7 @@ public class Principal {
 		Principal.getContentPane().add(lblUsuriosDoSistema);
 
 		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
-		bancoIF.setAreaSelect(areaSelect);
-
+		
 		scrollUsuariosOS = new JScrollPane();
 		scrollUsuariosOS.setBounds(10, 471, 190, 53);
 		Principal.getContentPane().add(scrollUsuariosOS);
@@ -417,7 +409,7 @@ public class Principal {
 		sqlFilaText = new LinkedBlockingQueue<String>();
 		bancoIF = new BancoIF(sqlFilaText);
 		preenchedor = new AreaSQLThread(sqlFilaText,areaSelect);
-		bancoIF.setAreaSelect(areaSelect);
+		//bancoIF.setAreaSelect(areaSelect);
 		bancoIF.setGravar(false);
 		textSenha.setText(null);
 		textServidor.setText(null);
@@ -435,12 +427,12 @@ public class Principal {
 		if(gravar){
 			bancoIF.getConsultas().clear();
 			buttonGravar.setText("Interromper");
-			btnAtualizarLista.setEnabled(false);
+			//btnAtualizarLista.setEnabled(false);
 		}else{
 			buttonGravar.setText("Gravar");
 			bancoIF.setGravar(false);
-			btnAtualizarLista.setEnabled(false);
-			btnAtualizarLista.enableInputMethods(false);
+			//btnAtualizarLista.setEnabled(false);
+			//btnAtualizarLista.enableInputMethods(false);
 		}
 	}
 

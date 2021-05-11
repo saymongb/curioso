@@ -23,7 +23,6 @@ import java.lang.System;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import javax.swing.JOptionPane;
-import javax.swing.JTextArea;
 
 public class BancoIF implements Runnable {
 
@@ -35,16 +34,14 @@ public class BancoIF implements Runnable {
 	private TreeSet<String> consultas;
 	private LinkedBlockingQueue<String> sqlFilaText;
 	private Vector<String> modulos,usuariosOS;
-	private String sqlConsulta,sqlresultado,sqlModulos,sqlUsuariosOS;
+	private String sqlConsulta,sqlModulos,sqlUsuariosOS;
+	private String porta,servico;
 	private String usuario,servidor,senha,nomeComputador,nomeModulo,usuarioOS;
 	private Connection conexao;
 	private boolean gravar;
-	private JTextArea areaSelect;
-	private String comum;
-
+	
 	// Construtor
 	public BancoIF(){
-		this.comum = comum;
 		inicializar();
 	}
 
@@ -56,6 +53,8 @@ public class BancoIF implements Runnable {
 	// Inicializar componentes
 	public void inicializar(){
 
+		porta="1521";
+		servico="ORCL";
 		consultas = new TreeSet<String>();
 		modulos = new Vector<String>();
 		usuariosOS = new Vector<String>();
@@ -89,8 +88,6 @@ public class BancoIF implements Runnable {
 				"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"' "+
 				"AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK') "+
 				" ORDER BY U.LAST_ACTIVE_TIME";
-		
-		System.out.println("Texto da consulta:"+sqlConsulta+"\n");
 	}
 
 	public void setSqlModulos(){
@@ -100,7 +97,6 @@ public class BancoIF implements Runnable {
 				"WHERE UPPER(V.USERNAME) = '"+usuario+"' "+
 				"AND (UPPER(V.TERMINAL) LIKE '%"+nomeComputador+"'"+
 				"OR UPPER(V.MACHINE) LIKE '%"+nomeComputador+"') "+
-				//"AND UPPER(V.OSUSER) LIKE '%"+usuarioOS+"'"+
 				" AND UPPER(USERNAME) NOT IN ('SAC_CIS','SAC_SUPORTE','JUMANJI','CIS_BH','ZANK')";
 	}
 
@@ -111,7 +107,6 @@ public class BancoIF implements Runnable {
 				"WHERE S.USERNAME LIKE '"+usuario+"' "+
 				"AND (UPPER(S.MACHINE) LIKE '%"+nomeComputador+"' OR "+
 				"UPPER(S.TERMINAL) LIKE '%"+nomeComputador+"')";
-
 	}
 
 	public void setGravar(boolean gravar) {
@@ -133,7 +128,6 @@ public class BancoIF implements Runnable {
 				if(!aux.toUpperCase().equals(BancoIF.nomeDaAplicacao) && !aux.toUpperCase().equals("JDBC THIN CLIENT")){
 					modulos.add(aux);
 				}
-				//modulos.add(resultadoModulos.getString(1));
 			}
 			resultadoModulos.close();
 		}catch(SQLException e){
@@ -143,6 +137,7 @@ public class BancoIF implements Runnable {
 
 		}catch(Exception e){
 			JOptionPane.showMessageDialog(null, "Erro ao preparar o SQL.");
+			JOptionPane.showMessageDialog(null, e.getMessage());
 		}
 	}
 
@@ -194,7 +189,7 @@ public class BancoIF implements Runnable {
 	 * */
 	public void setConexao (String servidor,String usuario,String senha){
 		
-		String url,porta="1521",servico="ORCL";
+		String url;
 		Properties props = new Properties();
 
 		this.servidor = servidor;
@@ -202,17 +197,16 @@ public class BancoIF implements Runnable {
 		this.senha = senha;
 
 		props.setProperty("ApplicationName",BancoIF.nomeDaAplicacao);
-		props.setProperty("user", usuario);
-		props.setProperty("password",senha);
+		props.setProperty("user", this.usuario);
+		props.setProperty("password",this.senha);
 
 		// Ip ou nome da estação onde está a base de dados
-		url = "jdbc:oracle:thin:@" + servidor + ":" + porta + ":" + servico;
+		url = "jdbc:oracle:thin:@" + this.servidor + ":" + this.porta + ":" + servico;
 
 		if(conexao == null){
 
 			try{
 
-				//conexao = DriverManager.getConnection(url,usuario,senha);
 				conexao = DriverManager.getConnection(url,props);
 				setSqlModulos();
 				setModulos();
@@ -233,10 +227,6 @@ public class BancoIF implements Runnable {
 
 	public TreeSet<String> getConsultas() {
 		return consultas;
-	}
-
-	public void setAreaSelect(JTextArea areaSelect) {
-		this.areaSelect = areaSelect;
 	}
 
 	// Funções de Controle
@@ -312,5 +302,4 @@ public class BancoIF implements Runnable {
 		this.nomeModulo = nomeModulo.toUpperCase();
 		
 	}
-
 }
